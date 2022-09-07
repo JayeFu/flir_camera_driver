@@ -25,7 +25,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
 -->
 <launch>
   <!-- Common parameters -->
-  <arg name="camera_name"               default="stereo" />
+  <arg name="camera_name"               default="camera_array" />
 
   <!-- When unspecified, the driver will use the default framerate as given by the
       camera itself. Use the parameter 'control_frame_rate' to enable manual frame 
@@ -77,7 +77,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
   <node pkg="nodelet" type="nodelet" name="camera_nodelet_manager" args="manager" />
 
   <group ns="$(arg camera_name)" >
-    <group ns="left" >
+    <group ns="front_left_cam" >
       <!-- Camera nodelet -->
       <node pkg="nodelet" type="nodelet" name="camera_nodelet"
             args="load spinnaker_camera_driver/SpinnakerCameraNodelet /camera_nodelet_manager" >
@@ -111,7 +111,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSI
       </node>
     </group>
 
-    <group ns="right" >
+    <group ns="front_right_cam" >
       <!-- Camera nodelet -->
       <node pkg="nodelet" type="nodelet" name="camera_nodelet"
             args="load spinnaker_camera_driver/SpinnakerCameraNodelet /camera_nodelet_manager" >
