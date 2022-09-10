@@ -57,6 +57,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <image_transport/image_transport.h>          // ROS library that allows sending compressed images
 #include <camera_info_manager/camera_info_manager.h>  // ROS library that publishes CameraInfo topics
 #include <sensor_msgs/CameraInfo.h>                   // ROS message header for CameraInfo
+#include <std_msgs/Bool.h>                            // ROS message header for trigger signal
 
 #include <wfov_camera_msgs/WFOVImage.h>
 #include <image_exposure_msgs/ExposureSequence.h>  // Message type for configuring gain and white balance.
@@ -540,6 +541,9 @@ private:
               sub_ =
                   getMTNodeHandle().subscribe("image_exposure_sequence", 10,
                                               &spinnaker_camera_driver::SpinnakerCameraNodelet::gainWBCallback, this);
+              trigger_sub_ = 
+                  getMTNodeHandle().subscribe("/trigger", 10, // global trigger topic
+                                              &spinnaker_camera_driver::SpinnakerCameraNodelet::triggerCallback, this);
             }
             state = CONNECTED;
           }
@@ -593,7 +597,7 @@ private:
 
             // wfov_image->temperature = spinnaker_.getCameraTemperature();
 
-            ros::Time time = ros::Time::now() + ros::Duration(config_.time_offset);
+            ros::Time time = last_trigger_time_;
             wfov_image->header.stamp = time;
             wfov_image->image.header.stamp = time;
 
@@ -665,6 +669,23 @@ private:
     }
   }
 
+  void triggerCallback(const std_msgs::Bool& msg)
+  {
+    try
+    {
+      NODELET_DEBUG_ONCE("Trigger callback:  Get trigger signal from Arduino Micro");
+      if (msg.data) // Correct edge
+      {
+        last_trigger_time_ = ros::Time::now();
+      }
+    }
+    catch(std::runtime_error& e)
+    {
+      NODELET_ERROR("triggerCallback failed with error: %s", e.what());
+    }
+    
+  }
+
   /* Class Fields */
   std::shared_ptr<dynamic_reconfigure::Server<spinnaker_camera_driver::SpinnakerConfig> > srv_;  ///< Needed to
                                                                                                  ///  initialize
@@ -722,6 +743,10 @@ private:
 
   /// Configuration:
   spinnaker_camera_driver::SpinnakerConfig config_;
+
+  /// Suscribe trigger signal
+  ros::Subscriber trigger_sub_;
+  ros::Time last_trigger_time_;
 };
 
 PLUGINLIB_EXPORT_CLASS(spinnaker_camera_driver::SpinnakerCameraNodelet,
