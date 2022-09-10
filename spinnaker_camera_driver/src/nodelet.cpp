@@ -541,6 +541,7 @@ private:
               sub_ =
                   getMTNodeHandle().subscribe("image_exposure_sequence", 10,
                                               &spinnaker_camera_driver::SpinnakerCameraNodelet::gainWBCallback, this);
+              last_trigger_time_ = ros::Time::now();
               trigger_sub_ = 
                   getMTNodeHandle().subscribe("/trigger", 10, // global trigger topic
                                               &spinnaker_camera_driver::SpinnakerCameraNodelet::triggerCallback, this);
@@ -597,9 +598,16 @@ private:
 
             // wfov_image->temperature = spinnaker_.getCameraTemperature();
 
-            ros::Time time = last_trigger_time_;
-            wfov_image->header.stamp = time;
-            wfov_image->image.header.stamp = time;
+            ros::Time now = ros::Time::now();
+            if (abs((now - last_trigger_time_).toSec()) > 1.0) // no trigger signal
+            {
+              wfov_image->header.stamp = now;
+              wfov_image->image.header.stamp = now;
+            } else // trigger signal is published
+            {
+              wfov_image->header.stamp = last_trigger_time_;
+              wfov_image->image.header.stamp = last_trigger_time_;
+            }
 
             // Set the CameraInfo message
             ci_.reset(new sensor_msgs::CameraInfo(cinfo_->getCameraInfo()));
